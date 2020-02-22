@@ -15,7 +15,7 @@ class RevealOnScroll {
         window.addEventListener("resize", debounce(() => {
             // console.log("brower jus resized")
             this.browersHeight=window.innerHeight;
-        }, 333))
+        }, 333));
     }
 
     hideInitially() {
