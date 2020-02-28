@@ -1,6 +1,12 @@
 
 // webpack bundles data to help loading times and keeps everything orginized
+const currentTask = process.env.npm_lifecycle_event;
 const path = require('path');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const fse =require('fs-extra');
+
 const postCSSPlugins = [
     require('postcss-import'),
     require('postcss-mixins'),
@@ -10,13 +16,42 @@ const postCSSPlugins = [
     require('autoprefixer')
 ];
 
-module.exports = {
+class RunAfterCompile {
+    apply(compiler){
+        compiler.hooks.done.tap('Copy images', function(){
+            fse.copySync('./app/assets/images', './docs/assets/images')
+        })
+    }
+}
+
+let cssConfig = {//test if the file name ends in .css
+    test: /\.css$/i,
+    use: ['css-loader?url=false', {loader: 'postcss-loader', options: {plugins: postCSSPlugins}}]
+};
+let pages = fse.readdirSync('./app').filter(function(file){
+    return file.endsWith('html')
+}).map(function(page){
+    return new HtmlWebpackPlugin({
+        filename: page,
+        template:`./app/${page}`
+    })
+})
+let config={
     entry: './app/assets/scripts/App.js',// what we want to bundle
-    output: {
+    plugins: pages,
+    module: {
+        rules: [ //tells web pack what to do with specific files
+            cssConfig
+        ]
+    }
+};
+if(currentTask == 'dev'){
+    cssConfig.use.unshift('style-loader');
+    config.output = {
         filename: 'bundled.js',
         path: path.resolve(__dirname, 'app')
-    },// where we want to put the bundeled code
-    devServer: {
+    };// where we want to put the bundeled code
+    config.devServer ={
         before: function(app, server) {
             server._watch('./app/**/*.html');
         },
@@ -24,16 +59,39 @@ module.exports = {
         hot: true, // allows web pack to insert new js and css without reload
         port: 3000,
         host: '0.0.0.0'//allows other devices on network to acess site
-    },
-    mode: 'development',
-    //watch nolonger necessary after adding devServer
-    //watch: true, //makes it keep runing an watch for changes
-    module: {
-        rules: [ //tells web pack what to do with specific files
-            {//test if the file name ends in .css
-                test: /\.css$/i,
-                use: ['style-loader','css-loader?url=false', {loader: 'postcss-loader', options: {plugins: postCSSPlugins}}]
-            }
-        ]
-    }
+    };
+
+    config.mode='development';
+
 }
+if(currentTask == 'build'){
+    config.module.rules.push({
+        test: /\.js$/,
+        exclude: /(node_modules)/,
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: ['@babel/preset-env']
+            }
+        }
+    })
+    cssConfig.use.unshift(MiniCssExtractPlugin.loader);
+    postCSSPlugins.push(require('cssnano'));
+    config.output = {
+        filename: '[name].[chunkhash].js',
+        chunkFilename: '[name].[chunkhash].js',
+        path: path.resolve(__dirname, 'docs')
+    }
+    config.mode='production';
+    config.optimization={
+        splitChunks: {chunks: 'all'}
+    }
+    config.plugins.push(
+        new CleanWebpackPlugin(),
+        new MiniCssExtractPlugin({filename: 'styles.[chunkhash].css'}),
+        new RunAfterCompile()
+    )
+}
+
+
+module.exports = config;
