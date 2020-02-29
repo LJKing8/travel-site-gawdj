@@ -4,8 +4,8 @@ exports.handler= function(events, context, callback){
     <h3>Welcome to the Secret Area</h3>
     <p>We can tell you that the sky is <strong>blue</strong>, and 2+2=4</p>
     `
-    if(event.body){
-        body=JSON.parse(event.body)
+    if(events.body){
+        body=JSON.parse(events.body)
     }else {
         body= {}
     }
