@@ -14,7 +14,7 @@ class ClientArea {
         })
     }
     sendRequest(){
-        Axios.post("https://vigorous-hugle-2c47da.netlify.com/.netlify/functions/secret-area",{password: this.field.value})
+        Axios.post("https://vigorous-hugle-2c47da.netlify.com/.netlify/functions/secret-area", {password: this.field.value})
         .then(response => {
             this.form.remove()
             this.contentArea.innerHTML=response.data
@@ -29,7 +29,7 @@ class ClientArea {
         document.body.insertAdjacentHTML('beforeend',`
         <div class="wrapper wrapper--medium">
         <h2 class="section-title section-title--blue">Secret Client Area</h2>
-        <form class="client-area__form" action="https://a.udemycdn.com/2019-11-14_23-07-18-ce230ae2f50763c06bf1416f26e29dc9/original.html?nva=20200229234133&amp;token=02e66ec749de8fb0aef0f">
+        <form class="client-area__form" action="">
           <input class="client-area__input" type="text" placeholder="Enter the secret phrase">
           <button class="btn btn--orange">Submit</button>
         </form>
